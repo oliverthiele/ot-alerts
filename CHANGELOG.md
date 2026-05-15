@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-05-15
+
+### Added
+
+- TYPO3 v14 support (`^13.4 || ^14.0`) — version constraints updated in `composer.json` and `ext_emconf.php`
+- `ot_alerts:test --verbose` / `-v` — shows per-channel dispatch result including Pushover HTTP status code and raw API response body
+
+### Changed
+
+- `AlertChannelInterface::send()` return type changed from `void` to `array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}` — enables callers to inspect the channel result
+- `AlertManager::notify()` return type changed from `void` to `array{sent: bool, reason: string, channels: list<...>}` — reason values: `new`, `reminder`, `rate_limited`, `no_channels`, `error`
+- `PushoverChannel` and `AlertManager` now use `Psr\Log\LoggerInterface` constructor injection instead of `GeneralUtility::makeInstance(LogManager::class)` (TYPO3 v13/v14 standard DI pattern)
+
+### Fixed
+
+- `ot_alerts:test` previously printed `[OK] dispatched` even when the alert was silently skipped due to an active rate limit — the command now shows an explicit `[WARNING]` with a clear explanation and hints at `--resolve`
+
 ## [0.1.1] — 2026-05-15
 
 ### Added

@@ -12,6 +12,9 @@ interface AlertChannelInterface
 
     public function isConfigured(): bool;
 
-    /** @param array<string, mixed> $event */
-    public function send(Alert $alert, array $event): void;
+    /**
+     * @param array<string, mixed> $event
+     * @return array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}
+     */
+    public function send(Alert $alert, array $event): array;
 }

@@ -8,9 +8,8 @@ use OliverThiele\OtAlerts\Alert\Alert;
 use OliverThiele\OtAlerts\Alert\AlertStatus;
 use OliverThiele\OtAlerts\Channel\AlertChannelInterface;
 use OliverThiele\OtAlerts\Domain\Repository\AlertEventRepository;
+use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Core\Log\LogManager;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class AlertManager
 {
@@ -19,6 +18,7 @@ class AlertManager
     public function __construct(
         private readonly AlertEventRepository $alertEventRepository,
         private readonly AlertChannelInterface $pushoverChannel,
+        private readonly LoggerInterface $logger,
         ExtensionConfiguration $extensionConfiguration,
     ) {
         $configuration = $extensionConfiguration->get('ot_alerts');
@@ -26,36 +26,64 @@ class AlertManager
         $this->reminderInterval = is_numeric($reminderIntervalRaw) ? (int)$reminderIntervalRaw : 3600;
     }
 
-    public function notify(Alert $alert): void
+    /**
+     * @return array{sent: bool, reason: string, channels: list<array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}>}
+     */
+    public function notify(Alert $alert): array
     {
+        $result = ['sent' => false, 'reason' => 'unknown', 'channels' => []];
+
         try {
             $event = $this->alertEventRepository->upsertEvent($alert);
 
-            if ($event === [] || !$this->shouldNotify($event)) {
-                return;
+            if ($event === []) {
+                $result['reason'] = 'error';
+                return $result;
             }
 
-            foreach ($this->getChannels() as $channel) {
-                $channel->send($alert, $event);
+            if (!$this->shouldNotify($event)) {
+                $result['reason'] = 'rate_limited';
+                return $result;
             }
 
-            $uid = isset($event['uid']) && is_numeric($event['uid']) ? (int)$event['uid'] : 0;
-            if ($uid > 0) {
-                $this->alertEventRepository->markNotified($uid);
+            $channels = $this->getChannels();
+
+            if ($channels === []) {
+                $result['reason'] = 'no_channels';
+                return $result;
+            }
+
+            $status = is_string($event['status'] ?? null) ? $event['status'] : '';
+            $result['reason'] = $status === AlertStatus::NEW->value ? 'new' : 'reminder';
+
+            foreach ($channels as $channel) {
+                $channelResult = $channel->send($alert, $event);
+                $result['channels'][] = $channelResult;
+                if ($channelResult['sent']) {
+                    $result['sent'] = true;
+                }
+            }
+
+            if ($result['sent']) {
+                $uid = isset($event['uid']) && is_numeric($event['uid']) ? (int)$event['uid'] : 0;
+                if ($uid > 0) {
+                    $this->alertEventRepository->markNotified($uid);
+                }
             }
         } catch (\Throwable $throwable) {
-            GeneralUtility::makeInstance(LogManager::class)
-                ->getLogger(__CLASS__)
-                ->error(
-                    'AlertManager::notify failed for {source}/{eventKey}: {message}',
-                    [
-                        'source'   => $alert->source,
-                        'eventKey' => $alert->eventKey,
-                        'message'  => $throwable->getMessage(),
-                        'exception' => $throwable,
-                    ]
-                );
+            $this->logger->error(
+                'AlertManager::notify failed for {source}/{eventKey}: {message}',
+                [
+                    'source'    => $alert->source,
+                    'eventKey'  => $alert->eventKey,
+                    'message'   => $throwable->getMessage(),
+                    'exception' => $throwable,
+                ]
+            );
+            $result['reason'] = 'error';
         }
+
+        return $result;
     }
 
     public function resolve(string $source, string $eventKey): void
@@ -63,17 +91,15 @@ class AlertManager
         try {
             $this->alertEventRepository->resolveEvent($source, $eventKey);
         } catch (\Throwable $throwable) {
-            GeneralUtility::makeInstance(LogManager::class)
-                ->getLogger(__CLASS__)
-                ->error(
-                    'AlertManager::resolve failed for {source}/{eventKey}: {message}',
-                    [
-                        'source'   => $source,
-                        'eventKey' => $eventKey,
-                        'message'  => $throwable->getMessage(),
-                        'exception' => $throwable,
-                    ]
-                );
+            $this->logger->error(
+                'AlertManager::resolve failed for {source}/{eventKey}: {message}',
+                [
+                    'source'    => $source,
+                    'eventKey'  => $eventKey,
+                    'message'   => $throwable->getMessage(),
+                    'exception' => $throwable,
+                ]
+            );
         }
     }
 

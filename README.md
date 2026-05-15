@@ -1,10 +1,13 @@
 # ot_alerts — Alert Management for TYPO3 Extensions
 
-Centralised alert proxy for TYPO3 extensions — sends Pushover push notifications with built-in
-rate limiting and deduplication. Other extensions simply call `AlertManager::notify()` and
-`AlertManager::resolve()`; ot_alerts handles throttling, state tracking, and channel dispatch.
+Centralised alert proxy for TYPO3 extensions — sends Pushover push notifications
+with built-in
+rate limiting and deduplication. Other extensions simply call
+`AlertManager::notify()` and
+`AlertManager::resolve()`; ot_alerts handles throttling, state tracking, and
+channel dispatch.
 
-[![TYPO3](https://img.shields.io/badge/TYPO3-13.4-orange.svg)](https://typo3.org/)
+[![TYPO3](https://img.shields.io/badge/TYPO3-13.4_%7C_14-orange.svg)](https://typo3.org/)
 [![Packagist Version](https://img.shields.io/packagist/v/oliverthiele/ot-alerts.svg)](https://packagist.org/packages/oliverthiele/ot-alerts)
 [![PHP](https://img.shields.io/packagist/dependency-v/oliverthiele/ot-alerts/php.svg)](https://php.net/)
 [![License](https://img.shields.io/packagist/l/oliverthiele/ot-alerts.svg)](LICENSE)
@@ -15,19 +18,23 @@ rate limiting and deduplication. Other extensions simply call `AlertManager::not
 - Pushover push notifications via REST API with HTML formatting
 - Event key and occurrence count visible in every notification
 - Optional tappable link button in Pushover (via `context['url']`)
-- Rate limiting: first occurrence triggers immediately, then once per configurable reminder interval
-- State machine: NEW → NOTIFIED → RESOLVED — resolved errors trigger fresh notifications when they reappear
-- DB-backed event log (`tx_otalerts_events`) for audit trail and future backend module
-- Optional integration: inject `?AlertManager` via constructor — ot_alerts is not a hard dependency, the service is simply `null` when not installed
+- Rate limiting: first occurrence triggers immediately, then once per
+  configurable reminder interval
+- State machine: NEW → NOTIFIED → RESOLVED — resolved errors trigger fresh
+  notifications when they reappear
+- DB-backed event log (`tx_otalerts_events`) for audit trail and future backend
+  module
+- Optional integration: inject `?AlertManager` via constructor — ot_alerts is
+  not a hard dependency, the service is simply `null` when not installed
 - Configurable reminder interval via TYPO3 Extension Configuration
 
 ## Requirements
 
-| Requirement       | Version |
-|-------------------|---------|
-| TYPO3             | ^13.4   |
-| PHP               | ^8.4    |
-| guzzlehttp/guzzle | ^7.0    |
+| Requirement       | Version          |
+|-------------------|------------------|
+| TYPO3             | ^13.4 \|\| ^14.0 |
+| PHP               | ^8.4             |
+| guzzlehttp/guzzle | ^7.0             |
 
 ## Installation
 
@@ -56,20 +63,23 @@ Both values are available in your [Pushover dashboard](https://pushover.net/).
 
 ### Extension Configuration
 
-Configure in the TYPO3 backend under **Admin Tools → Settings → Extension Configuration → ot_alerts**:
+Configure in the TYPO3 backend under **Admin Tools → Settings → Extension
+Configuration → ot_alerts**:
 
-| Key                       | Type | Default | Description                                           |
-|---------------------------|------|---------|-------------------------------------------------------|
-| `reminderInterval`        | int  | `3600`  | Seconds between reminder notifications (1 hour)       |
-| `pushoverEmergencyRetry`  | int  | `60`    | Seconds between retries for CRITICAL alerts (min 30)  |
-| `pushoverEmergencyExpire` | int  | `3600`  | Seconds until Pushover stops retrying (max 10800)     |
+| Key                       | Type | Default | Description                                          |
+|---------------------------|------|---------|------------------------------------------------------|
+| `reminderInterval`        | int  | `3600`  | Seconds between reminder notifications (1 hour)      |
+| `pushoverEmergencyRetry`  | int  | `60`    | Seconds between retries for CRITICAL alerts (min 30) |
+| `pushoverEmergencyExpire` | int  | `3600`  | Seconds until Pushover stops retrying (max 10800)    |
 
 ## Usage
 
 ### Optional dependency via constructor injection
 
-The recommended integration pattern uses TYPO3's Symfony DI container. Declare `?AlertManager`
-as a nullable constructor parameter — when ot_alerts is not installed, the container injects
+The recommended integration pattern uses TYPO3's Symfony DI container. Declare
+`?AlertManager`
+as a nullable constructor parameter — when ot_alerts is not installed, the
+container injects
 `null` and all calls are silently skipped via the null-safe operator:
 
 ```php
@@ -98,7 +108,8 @@ class MyService
 }
 ```
 
-No `class_exists()` guard or `GeneralUtility::makeInstance()` needed — the container resolves
+No `class_exists()` guard or `GeneralUtility::makeInstance()` needed — the
+container resolves
 the optional service automatically.
 
 ### Sending an alert
@@ -114,7 +125,8 @@ $this->alertManager?->notify(new Alert(
 
 ### Sending an alert with a URL
 
-Pass `context['url']` to add a tappable link button to the Pushover notification.
+Pass `context['url']` to add a tappable link button to the Pushover
+notification.
 This is useful to open the affected page directly from the push:
 
 ```php
@@ -129,7 +141,8 @@ $this->alertManager?->notify(new Alert(
 
 ### Resolving an alert
 
-Call `resolve()` once the error condition is no longer present. This resets the state so the
+Call `resolve()` once the error condition is no longer present. This resets the
+state so the
 next occurrence will trigger a fresh notification immediately.
 
 ```php
@@ -195,7 +208,19 @@ Reset the rate limit after the test so the next real error triggers immediately:
 vendor/bin/typo3 ot_alerts:test --resolve
 ```
 
-The command shows which ENV variables are present, dispatches the alert, and prints the result.
+Show the Pushover API response (HTTP status + raw JSON body) for debugging:
+
+```bash
+vendor/bin/typo3 ot_alerts:test -v
+```
+
+If the alert was previously sent and the reminder interval has not yet elapsed,
+the command
+will show `[WARNING] Rate limit active` instead of the former misleading
+`[OK] dispatched`.
+
+The command shows which ENV variables are present, dispatches the alert, and
+prints the result.
 
 ## License
 

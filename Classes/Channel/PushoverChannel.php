@@ -8,9 +8,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use OliverThiele\OtAlerts\Alert\Alert;
 use OliverThiele\OtAlerts\Alert\AlertSeverity;
+use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Core\Log\LogManager;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class PushoverChannel implements AlertChannelInterface
 {
@@ -28,8 +27,10 @@ class PushoverChannel implements AlertChannelInterface
     private int $emergencyRetry;
     private int $emergencyExpire;
 
-    public function __construct(ExtensionConfiguration $extensionConfiguration)
-    {
+    public function __construct(
+        ExtensionConfiguration $extensionConfiguration,
+        private readonly LoggerInterface $logger,
+    ) {
         $configuration = $extensionConfiguration->get('ot_alerts');
         $configuration = is_array($configuration) ? $configuration : [];
 
@@ -52,14 +53,15 @@ class PushoverChannel implements AlertChannelInterface
             && $_ENV['PUSHOVER_USER_KEY'] !== '';
     }
 
-    /** @param array<string, mixed> $event */
-    public function send(Alert $alert, array $event): void
+    /**
+     * @param array<string, mixed> $event
+     * @return array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}
+     */
+    public function send(Alert $alert, array $event): array
     {
         if (!$this->isConfigured()) {
-            GeneralUtility::makeInstance(LogManager::class)
-                ->getLogger(__CLASS__)
-                ->warning('Pushover not configured — PUSHOVER_APP_TOKEN or PUSHOVER_USER_KEY missing');
-            return;
+            $this->logger->warning('Pushover not configured — PUSHOVER_APP_TOKEN or PUSHOVER_USER_KEY missing');
+            return ['sent' => false, 'channel' => $this->getIdentifier(), 'error' => 'not configured'];
         }
 
         $occurrenceCount = isset($event['occurrence_count']) && is_numeric($event['occurrence_count'])
@@ -93,14 +95,26 @@ class PushoverChannel implements AlertChannelInterface
 
         try {
             $httpClient = new Client();
-            $httpClient->post(self::API_URL, ['form_params' => $parameters]);
+            $response = $httpClient->post(self::API_URL, ['form_params' => $parameters]);
+            $body = $response->getBody()->getContents();
+
+            return [
+                'sent'       => true,
+                'channel'    => $this->getIdentifier(),
+                'httpStatus' => $response->getStatusCode(),
+                'body'       => $body,
+            ];
         } catch (GuzzleException $exception) {
-            GeneralUtility::makeInstance(LogManager::class)
-                ->getLogger(__CLASS__)
-                ->error(
-                    'Pushover notification failed: {message}',
-                    ['message' => $exception->getMessage(), 'exception' => $exception]
-                );
+            $this->logger->error(
+                'Pushover notification failed: {message}',
+                ['message' => $exception->getMessage(), 'exception' => $exception]
+            );
+
+            return [
+                'sent'    => false,
+                'channel' => $this->getIdentifier(),
+                'error'   => $exception->getMessage(),
+            ];
         }
     }
 

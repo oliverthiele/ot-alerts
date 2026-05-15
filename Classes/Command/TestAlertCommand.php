@@ -60,7 +60,7 @@ class TestAlertCommand extends Command
         }
 
         $pushoverAppToken = $_ENV['PUSHOVER_APP_TOKEN'] ?? '';
-        $pushoverUserKey = $_ENV['PUSHOVER_USER_KEY'] ?? '';
+        $pushoverUserKey  = $_ENV['PUSHOVER_USER_KEY'] ?? '';
 
         $style->section('ot_alerts — Channel Configuration');
         $style->definitionList(
@@ -81,9 +81,36 @@ class TestAlertCommand extends Command
             severity: $severity,
         );
 
-        $this->alertManager->notify($alert);
+        $result = $this->alertManager->notify($alert);
 
-        $style->success(sprintf('Test alert dispatched (severity: %s)', $severity->value));
+        if ($output->isVerbose()) {
+            $this->renderVerboseOutput($style, $result);
+        }
+
+        if ($result['reason'] === 'rate_limited') {
+            $style->warning(
+                'Rate limit active — alert was NOT dispatched.' . PHP_EOL .
+                'The event is already in the DB with status "notified" and the reminder interval has not elapsed.' . PHP_EOL .
+                'Run with --resolve to reset the rate limit so the next test sends immediately.'
+            );
+            return Command::SUCCESS;
+        }
+
+        if ($result['reason'] === 'no_channels') {
+            $style->warning('No configured channels found — alert was NOT dispatched.');
+            return Command::SUCCESS;
+        }
+
+        if ($result['reason'] === 'error') {
+            $style->error('An error occurred — check the TYPO3 log for details.');
+            return Command::FAILURE;
+        }
+
+        if (!$result['sent']) {
+            $style->warning('Alert was processed but not sent by any channel.');
+        } else {
+            $style->success(sprintf('Test alert dispatched (severity: %s)', $severity->value));
+        }
 
         if ($input->getOption('resolve')) {
             $this->alertManager->resolve('ot_alerts', 'test.alert');
@@ -93,5 +120,37 @@ class TestAlertCommand extends Command
         }
 
         return Command::SUCCESS;
+    }
+
+    /** @param array{sent: bool, reason: string, channels: list<array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}>} $result */
+    private function renderVerboseOutput(SymfonyStyle $style, array $result): void
+    {
+        $style->section('Dispatch result (verbose)');
+        $style->definitionList(
+            ['sent'   => $result['sent'] ? 'yes' : 'no'],
+            ['reason' => $result['reason']],
+        );
+
+        if ($result['channels'] === []) {
+            $style->writeln('<comment>No channel calls were made.</comment>');
+            return;
+        }
+
+        foreach ($result['channels'] as $channelResult) {
+            $style->writeln(sprintf('<info>Channel: %s</info>', $channelResult['channel']));
+            $style->writeln(sprintf('  sent: %s', $channelResult['sent'] ? 'yes' : 'no'));
+
+            if (isset($channelResult['httpStatus'])) {
+                $style->writeln(sprintf('  HTTP status: %d', $channelResult['httpStatus']));
+            }
+
+            if (isset($channelResult['body'])) {
+                $style->writeln(sprintf('  Response body: %s', $channelResult['body']));
+            }
+
+            if (isset($channelResult['error'])) {
+                $style->writeln(sprintf('  Error: %s', $channelResult['error']));
+            }
+        }
     }
 }
