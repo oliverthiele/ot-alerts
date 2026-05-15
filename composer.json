@@ -1,7 +1,7 @@
 {
 	"name": "oliverthiele/ot-alerts",
 	"type": "typo3-cms-extension",
-	"description": "Alert management for TYPO3 extensions — Pushover notifications with rate limiting",
+	"description": "OT Alerts - Alert management for TYPO3 extensions — Pushover notifications with rate limiting",
 	"homepage": "https://www.oliver-thiele.de/",
 	"license": ["GPL-2.0-or-later"],
 	"keywords": ["TYPO3 CMS"],

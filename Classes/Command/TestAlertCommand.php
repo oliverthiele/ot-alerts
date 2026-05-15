@@ -88,10 +88,6 @@ class TestAlertCommand extends Command
 
         $result = $this->alertManager->notify($alert);
 
-        if ($output->isVerbose()) {
-            $this->renderVerboseOutput($style, $output, $result);
-        }
-
         if ($result['reason'] === 'rate_limited') {
             $style->warning(
                 'Rate limit active — alert was NOT dispatched.' . PHP_EOL .
@@ -111,6 +107,9 @@ class TestAlertCommand extends Command
             return Command::FAILURE;
         }
 
+        // Always show the raw API result — [OK] alone is not enough to confirm delivery
+        $this->renderChannelResults($style, $result['channels']);
+
         if (!$result['sent']) {
             $style->warning('Alert was processed but not sent by any channel.');
         } else {
@@ -128,36 +127,35 @@ class TestAlertCommand extends Command
         return Command::SUCCESS;
     }
 
-    /** @param array{sent: bool, reason: string, channels: list<array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}>} $result */
-    private function renderVerboseOutput(SymfonyStyle $style, OutputInterface $output, array $result): void
+    /**
+     * @param list<array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}> $channels
+     */
+    private function renderChannelResults(SymfonyStyle $style, array $channels): void
     {
-        $style->section('Dispatch result (verbose)');
-        $style->definitionList(
-            ['sent'   => $result['sent'] ? 'yes' : 'no'],
-            ['reason' => $result['reason']],
-        );
-
-        if ($result['channels'] === []) {
-            $style->writeln('<comment>No channel calls were made.</comment>');
+        if ($channels === []) {
             return;
         }
 
-        foreach ($result['channels'] as $channelResult) {
-            $style->writeln(sprintf('<info>Channel: %s</info>', $channelResult['channel']));
-            $style->writeln(sprintf('  sent: %s', $channelResult['sent'] ? 'yes' : 'no'));
+        $style->section('API Response');
+
+        foreach ($channels as $channelResult) {
+            $header = sprintf('<info>Channel: %s</info>', $channelResult['channel']);
 
             if (isset($channelResult['httpStatus'])) {
-                $style->writeln(sprintf('  HTTP status: %d', $channelResult['httpStatus']));
+                $header .= sprintf(' — HTTP %d', $channelResult['httpStatus']);
+            }
+
+            $style->writeln($header);
+
+            if (isset($channelResult['body'])) {
+                $style->writeln(sprintf('  %s', $channelResult['body']));
             }
 
             if (isset($channelResult['error'])) {
-                $style->writeln(sprintf('  Error: %s', $channelResult['error']));
+                $style->writeln(sprintf('  <error>Error: %s</error>', $channelResult['error']));
             }
 
-            // Raw API response body only at -vvv (debug level)
-            if (isset($channelResult['body']) && $output->isDebug()) {
-                $style->writeln(sprintf('  Response body: %s', $channelResult['body']));
-            }
+            $style->newLine();
         }
     }
 }
