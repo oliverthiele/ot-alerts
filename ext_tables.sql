@@ -10,5 +10,5 @@ CREATE TABLE tx_otalerts_events (
     occurrence_count int(11) unsigned NOT NULL DEFAULT 0,
     last_message     text,
     PRIMARY KEY (uid),
-    UNIQUE KEY source_event (source(100), event_key(200))
+    UNIQUE KEY source_event (source, event_key)
 );
