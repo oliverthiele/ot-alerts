@@ -39,7 +39,7 @@ class TestAlertCommand extends Command
                 'resolve',
                 null,
                 InputOption::VALUE_NONE,
-                'Immediately resolve the test alert after sending (resets rate limit)'
+                'Reset the rate limit before dispatching — allows re-sending when the event is already "notified"'
             );
     }
 
@@ -60,7 +60,7 @@ class TestAlertCommand extends Command
         }
 
         $pushoverAppToken = $_ENV['PUSHOVER_APP_TOKEN'] ?? '';
-        $pushoverUserKey = $_ENV['PUSHOVER_USER_KEY'] ?? '';
+        $pushoverUserKey  = $_ENV['PUSHOVER_USER_KEY'] ?? '';
 
         $style->section('ot_alerts — Channel Configuration');
         $style->definitionList(
@@ -74,6 +74,11 @@ class TestAlertCommand extends Command
 
         $style->section('Sending test alert');
 
+        if ($input->getOption('resolve')) {
+            $this->alertManager->resolve('ot_alerts', 'test.alert');
+            $style->writeln('<comment>Rate limit bypassed — event pre-resolved before dispatch.</comment>');
+        }
+
         $alert = new Alert(
             source: 'ot_alerts',
             eventKey: 'test.alert',
@@ -81,17 +86,72 @@ class TestAlertCommand extends Command
             severity: $severity,
         );
 
-        $this->alertManager->notify($alert);
+        $result = $this->alertManager->notify($alert);
 
-        $style->success(sprintf('Test alert dispatched (severity: %s)', $severity->value));
+        if ($result['reason'] === 'rate_limited') {
+            $style->warning(
+                'Rate limit active — alert was NOT dispatched.' . PHP_EOL .
+                'The event is already in the DB with status "notified" and the reminder interval has not elapsed.' . PHP_EOL .
+                'Run with --resolve to bypass the rate limit and send immediately.'
+            );
+            return Command::SUCCESS;
+        }
 
-        if ($input->getOption('resolve')) {
-            $this->alertManager->resolve('ot_alerts', 'test.alert');
-            $style->note('Test alert resolved — rate limit reset, next test will send again immediately.');
+        if ($result['reason'] === 'no_channels') {
+            $style->warning('No configured channels found — alert was NOT dispatched.');
+            return Command::SUCCESS;
+        }
+
+        if ($result['reason'] === 'error') {
+            $style->error('An error occurred — check the TYPO3 log for details.');
+            return Command::FAILURE;
+        }
+
+        // Always show the raw API result — [OK] alone is not enough to confirm delivery
+        $this->renderChannelResults($style, $result['channels']);
+
+        if (!$result['sent']) {
+            $style->warning('Alert was processed but not sent by any channel.');
         } else {
-            $style->note('Run with --resolve to reset the rate limit so the next test sends immediately.');
+            $style->success(sprintf('Test alert dispatched (severity: %s)', $severity->value));
+        }
+
+        if ($result['sent']) {
+            $style->note('Status is now "notified" — the next test will be rate-limited. Use --resolve to bypass.');
         }
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @param list<array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}> $channels
+     */
+    private function renderChannelResults(SymfonyStyle $style, array $channels): void
+    {
+        if ($channels === []) {
+            return;
+        }
+
+        $style->section('API Response');
+
+        foreach ($channels as $channelResult) {
+            $header = sprintf('<info>Channel: %s</info>', $channelResult['channel']);
+
+            if (isset($channelResult['httpStatus'])) {
+                $header .= sprintf(' — HTTP %d', $channelResult['httpStatus']);
+            }
+
+            $style->writeln($header);
+
+            if (isset($channelResult['body'])) {
+                $style->writeln(sprintf('  %s', $channelResult['body']));
+            }
+
+            if (isset($channelResult['error'])) {
+                $style->writeln(sprintf('  <error>Error: %s</error>', $channelResult['error']));
+            }
+
+            $style->newLine();
+        }
     }
 }

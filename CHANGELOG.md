@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-05-15
+
+### Added
+
+- TYPO3 v14 support (`^13.4 || ^14.0`) — version constraints updated in `composer.json` and `ext_emconf.php`
+- `ot_alerts:test --verbose` / `-v` — shows per-channel dispatch result including Pushover HTTP status code and raw API response body
+
+### Changed
+
+- Pushover notification title now includes the server hostname: `[ERROR] my_extension @ www.example.com` — makes it immediately clear which environment (DDEV, staging, live) triggered the alert when multiple systems share the same Pushover credentials
+- `AlertChannelInterface::send()` return type changed from `void` to `array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}` — enables callers to inspect the channel result
+- `AlertManager::notify()` return type changed from `void` to `array{sent: bool, reason: string, channels: list<...>}` — reason values: `new`, `reminder`, `rate_limited`, `no_channels`, `error`
+- `PushoverChannel` and `AlertManager` now use `Psr\Log\LoggerInterface` constructor injection instead of `GeneralUtility::makeInstance(LogManager::class)` (TYPO3 v13/v14 standard DI pattern)
+
+### Fixed
+
+- `composer.json description` now follows the `"Title - Description"` convention required by TYPO3 v14 Extension Manager to avoid the "Extension Title missing" warning
+- `ot_alerts:test` now always shows the raw Pushover API response (HTTP status + JSON body) directly in the command output — `[OK]` is no longer printed without a confirmed API response; the `-v`/`-vvv` flags are no longer needed for diagnostics
+- `ot_alerts:test --resolve` was silently ignored when the rate limit was active — the command returned early before reaching the resolve call. Fixed by pre-resolving before `notify()` (resets status to RESOLVED so `upsertEvent()` immediately transitions back to NEW and `shouldNotify()` allows the send)
+- `ot_alerts:test` previously printed `[OK] dispatched` even when the alert was silently skipped due to an active rate limit — the command now shows an explicit `[WARNING]`
+- Removed post-resolve after successful dispatch: `--resolve` is now a single one-time bypass only; the event status is always `notified` after a successful send, making the flow predictable regardless of flags
+- The `[NOTE]` after a successful dispatch now consistently states the rate-limit consequence instead of confusingly mentioning "resolved"
+
 ## [0.1.1] — 2026-05-15
 
 ### Added
