@@ -20,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `ot_alerts:test` previously printed `[OK] dispatched` even when the alert was silently skipped due to an active rate limit — the command now shows an explicit `[WARNING]` with a clear explanation and hints at `--resolve`
+- `ot_alerts:test --resolve` was silently ignored when the rate limit was active — the command returned early before reaching the resolve call. Fixed by pre-resolving before `notify()` (resets status to RESOLVED so `upsertEvent()` immediately transitions back to NEW and `shouldNotify()` allows the send)
+- `ot_alerts:test` previously printed `[OK] dispatched` even when the alert was silently skipped due to an active rate limit — the command now shows an explicit `[WARNING]`
+- `-v` now shows channel HTTP status without the raw response body; use `-vvv` for the full Pushover API response body
 
 ## [0.1.1] — 2026-05-15
 

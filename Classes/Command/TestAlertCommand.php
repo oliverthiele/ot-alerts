@@ -39,7 +39,7 @@ class TestAlertCommand extends Command
                 'resolve',
                 null,
                 InputOption::VALUE_NONE,
-                'Immediately resolve the test alert after sending (resets rate limit)'
+                'Pre-resolve before sending (bypasses rate limit) and post-resolve after (resets for next test)'
             );
     }
 
@@ -74,6 +74,11 @@ class TestAlertCommand extends Command
 
         $style->section('Sending test alert');
 
+        // Pre-resolve so the rate limit is bypassed for this run
+        if ($input->getOption('resolve')) {
+            $this->alertManager->resolve('ot_alerts', 'test.alert');
+        }
+
         $alert = new Alert(
             source: 'ot_alerts',
             eventKey: 'test.alert',
@@ -84,14 +89,14 @@ class TestAlertCommand extends Command
         $result = $this->alertManager->notify($alert);
 
         if ($output->isVerbose()) {
-            $this->renderVerboseOutput($style, $result);
+            $this->renderVerboseOutput($style, $output, $result);
         }
 
         if ($result['reason'] === 'rate_limited') {
             $style->warning(
                 'Rate limit active — alert was NOT dispatched.' . PHP_EOL .
                 'The event is already in the DB with status "notified" and the reminder interval has not elapsed.' . PHP_EOL .
-                'Run with --resolve to reset the rate limit so the next test sends immediately.'
+                'Run with --resolve to bypass the rate limit and send immediately.'
             );
             return Command::SUCCESS;
         }
@@ -112,10 +117,11 @@ class TestAlertCommand extends Command
             $style->success(sprintf('Test alert dispatched (severity: %s)', $severity->value));
         }
 
-        if ($input->getOption('resolve')) {
+        // Post-resolve: reset rate limit so the next test also sends immediately
+        if ($input->getOption('resolve') && $result['sent']) {
             $this->alertManager->resolve('ot_alerts', 'test.alert');
             $style->note('Test alert resolved — rate limit reset, next test will send again immediately.');
-        } else {
+        } elseif ($result['sent']) {
             $style->note('Run with --resolve to reset the rate limit so the next test sends immediately.');
         }
 
@@ -123,7 +129,7 @@ class TestAlertCommand extends Command
     }
 
     /** @param array{sent: bool, reason: string, channels: list<array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}>} $result */
-    private function renderVerboseOutput(SymfonyStyle $style, array $result): void
+    private function renderVerboseOutput(SymfonyStyle $style, OutputInterface $output, array $result): void
     {
         $style->section('Dispatch result (verbose)');
         $style->definitionList(
@@ -144,12 +150,13 @@ class TestAlertCommand extends Command
                 $style->writeln(sprintf('  HTTP status: %d', $channelResult['httpStatus']));
             }
 
-            if (isset($channelResult['body'])) {
-                $style->writeln(sprintf('  Response body: %s', $channelResult['body']));
-            }
-
             if (isset($channelResult['error'])) {
                 $style->writeln(sprintf('  Error: %s', $channelResult['error']));
+            }
+
+            // Raw API response body only at -vvv (debug level)
+            if (isset($channelResult['body']) && $output->isDebug()) {
+                $style->writeln(sprintf('  Response body: %s', $channelResult['body']));
             }
         }
     }

@@ -208,16 +208,22 @@ Reset the rate limit after the test so the next real error triggers immediately:
 vendor/bin/typo3 ot_alerts:test --resolve
 ```
 
-Show the Pushover API response (HTTP status + raw JSON body) for debugging:
+Show per-channel dispatch result including HTTP status:
 
 ```bash
 vendor/bin/typo3 ot_alerts:test -v
 ```
 
+Show the raw Pushover API response body (full debug output):
+
+```bash
+vendor/bin/typo3 ot_alerts:test -vvv
+```
+
 If the alert was previously sent and the reminder interval has not yet elapsed,
-the command
-will show `[WARNING] Rate limit active` instead of the former misleading
-`[OK] dispatched`.
+the command shows `[WARNING] Rate limit active`. Use `--resolve` to bypass:
+the command pre-resolves the event before sending (so the rate limit is skipped)
+and post-resolves after (so the next test also sends immediately).
 
 The command shows which ENV variables are present, dispatches the alert, and
 prints the result.
