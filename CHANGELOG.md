@@ -28,3 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Emergency priority support: configurable `pushoverEmergencyRetry` and `pushoverEmergencyExpire` via Extension Configuration
 - HTML-formatted Pushover messages: event key bold, occurrence count italic
 - Optional tappable link button in Pushover via `context['url']` on the `Alert` value object
+- Optional dependency pattern via nullable constructor injection (`?AlertManager $alertManager = null`) — no hard dependency required
+- `phpstan.neon.dist` — PHPStan level 9 configuration
+- `LICENSE` (GPL-2.0-or-later) and `.editorconfig`

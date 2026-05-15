@@ -1,0 +1,12 @@
+parameters:
+  level: 9
+  paths:
+    - Classes/
+  tmpDir: ../../var/cache/phpstan/ot-alerts
+  reportUnmatchedIgnoredErrors: false
+  checkUninitializedProperties: true
+
+  scanDirectories:
+    - ../../vendor
+  scanFiles:
+    - ../../vendor/autoload.php
