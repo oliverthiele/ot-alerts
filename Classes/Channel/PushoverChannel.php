@@ -68,7 +68,8 @@ class PushoverChannel implements AlertChannelInterface
             ? (int)$event['occurrence_count']
             : 1;
 
-        $title    = sprintf('[%s] %s', strtoupper($alert->severity->value), $alert->source);
+        $hostname = gethostname() ?: 'unknown';
+        $title    = sprintf('[%s] %s @ %s', strtoupper($alert->severity->value), $alert->source, $hostname);
         $priority = $this->mapSeverityToPriority($alert->severity);
 
         $parameters = [

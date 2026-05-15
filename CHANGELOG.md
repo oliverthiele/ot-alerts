@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Pushover notification title now includes the server hostname: `[ERROR] my_extension @ www.example.com` — makes it immediately clear which environment (DDEV, staging, live) triggered the alert when multiple systems share the same Pushover credentials
 - `AlertChannelInterface::send()` return type changed from `void` to `array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}` — enables callers to inspect the channel result
 - `AlertManager::notify()` return type changed from `void` to `array{sent: bool, reason: string, channels: list<...>}` — reason values: `new`, `reminder`, `rate_limited`, `no_channels`, `error`
 - `PushoverChannel` and `AlertManager` now use `Psr\Log\LoggerInterface` constructor injection instead of `GeneralUtility::makeInstance(LogManager::class)` (TYPO3 v13/v14 standard DI pattern)
