@@ -39,7 +39,7 @@ class TestAlertCommand extends Command
                 'resolve',
                 null,
                 InputOption::VALUE_NONE,
-                'Pre-resolve before sending (bypasses rate limit) and post-resolve after (resets for next test)'
+                'Reset the rate limit before dispatching — allows re-sending when the event is already "notified"'
             );
     }
 
@@ -74,9 +74,9 @@ class TestAlertCommand extends Command
 
         $style->section('Sending test alert');
 
-        // Pre-resolve so the rate limit is bypassed for this run
         if ($input->getOption('resolve')) {
             $this->alertManager->resolve('ot_alerts', 'test.alert');
+            $style->writeln('<comment>Rate limit bypassed — event pre-resolved before dispatch.</comment>');
         }
 
         $alert = new Alert(
@@ -116,12 +116,8 @@ class TestAlertCommand extends Command
             $style->success(sprintf('Test alert dispatched (severity: %s)', $severity->value));
         }
 
-        // Post-resolve: reset rate limit so the next test also sends immediately
-        if ($input->getOption('resolve') && $result['sent']) {
-            $this->alertManager->resolve('ot_alerts', 'test.alert');
-            $style->note('Test alert resolved — rate limit reset, next test will send again immediately.');
-        } elseif ($result['sent']) {
-            $style->note('Run with --resolve to reset the rate limit so the next test sends immediately.');
+        if ($result['sent']) {
+            $style->note('Status is now "notified" — the next test will be rate-limited. Use --resolve to bypass.');
         }
 
         return Command::SUCCESS;
