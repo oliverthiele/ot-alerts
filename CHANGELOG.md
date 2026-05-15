@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] — 2026-05-15
+
+### Fixed
+
+- `ext_tables.sql`: removed redundant prefix lengths from `UNIQUE KEY source_event` — `source(100)` and `event_key(200)` match the column widths exactly, causing Doctrine DBAL to perpetually suggest `DROP INDEX` + `CREATE UNIQUE INDEX` in the TYPO3 database analyzer
+
 ## [0.2.0] — 2026-05-15
 
 ### Added
