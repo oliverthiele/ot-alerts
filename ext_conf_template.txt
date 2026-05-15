@@ -1,0 +1,8 @@
+# cat=RateLimit/settings/a1; type=int; label=Reminder interval in seconds (default: 3600 = 1 hour):
+reminderInterval = 3600
+
+# cat=Pushover/emergency/a1; type=int; label=Emergency retry interval in seconds — how often Pushover repeats until acknowledged (min 30, default: 60):
+pushoverEmergencyRetry = 60
+
+# cat=Pushover/emergency/a2; type=int; label=Emergency expire in seconds — how long Pushover keeps retrying (max 10800, default: 3600):
+pushoverEmergencyExpire = 3600

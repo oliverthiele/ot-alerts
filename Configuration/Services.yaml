@@ -1,0 +1,11 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  OliverThiele\OtAlerts\:
+    resource: '../Classes/*'
+
+  OliverThiele\OtAlerts\Channel\AlertChannelInterface:
+    alias: OliverThiele\OtAlerts\Channel\PushoverChannel

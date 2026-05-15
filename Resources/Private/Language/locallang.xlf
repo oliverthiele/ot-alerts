@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="messages">
+        <body>
+            <trans-unit id="tx_otalerts_events">
+                <source>Alert Events</source>
+            </trans-unit>
+            <trans-unit id="tx_otalerts_events.source">
+                <source>Source</source>
+            </trans-unit>
+            <trans-unit id="tx_otalerts_events.event_key">
+                <source>Event Key</source>
+            </trans-unit>
+            <trans-unit id="tx_otalerts_events.severity">
+                <source>Severity</source>
+            </trans-unit>
+            <trans-unit id="tx_otalerts_events.status">
+                <source>Status</source>
+            </trans-unit>
+            <trans-unit id="tx_otalerts_events.first_occurrence">
+                <source>First Occurrence</source>
+            </trans-unit>
+            <trans-unit id="tx_otalerts_events.last_occurrence">
+                <source>Last Occurrence</source>
+            </trans-unit>
+            <trans-unit id="tx_otalerts_events.last_notified">
+                <source>Last Notified</source>
+            </trans-unit>
+            <trans-unit id="tx_otalerts_events.occurrence_count">
+                <source>Occurrence Count</source>
+            </trans-unit>
+            <trans-unit id="tx_otalerts_events.last_message">
+                <source>Last Message</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
