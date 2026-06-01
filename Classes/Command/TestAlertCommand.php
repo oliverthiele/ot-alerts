@@ -90,9 +90,9 @@ class TestAlertCommand extends Command
 
         if ($result['reason'] === 'rate_limited') {
             $style->warning(
-                'Rate limit active — alert was NOT dispatched.' . PHP_EOL .
-                'The event is already in the DB with status "notified" and the reminder interval has not elapsed.' . PHP_EOL .
-                'Run with --resolve to bypass the rate limit and send immediately.'
+                'Rate limit active — alert was NOT dispatched.' . PHP_EOL
+                . 'The event is already in the DB with status "notified" and the reminder interval has not elapsed.' . PHP_EOL
+                . 'Run with --resolve to bypass the rate limit and send immediately.'
             );
             return Command::SUCCESS;
         }
