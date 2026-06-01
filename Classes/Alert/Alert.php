@@ -15,6 +15,7 @@ final readonly class Alert
         public string $message,
         public AlertSeverity $severity,
         public array $context = [],
+        public ?int $reminderInterval = null,
     ) {
     }
 }

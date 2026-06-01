@@ -26,7 +26,7 @@ channel dispatch.
   module
 - Optional integration: inject `?AlertManager` via constructor — ot_alerts is
   not a hard dependency, the service is simply `null` when not installed
-- Configurable reminder interval via TYPO3 Extension Configuration
+- Configurable reminder interval via TYPO3 Extension Configuration, with optional per-alert override
 
 ## Requirements
 
@@ -136,6 +136,22 @@ $this->alertManager?->notify(new Alert(
     message: 'Could not connect to external API',
     severity: AlertSeverity::ERROR,
     context: ['url' => 'https://example.com/affected-page/'],
+));
+```
+
+### Sending an alert with a per-alert reminder interval
+
+Pass `reminderInterval` to override the global extension configuration for this
+specific alert. Useful when certain events need a shorter or longer throttle than
+the global default:
+
+```php
+$this->alertManager?->notify(new Alert(
+    source: 'my_extension',
+    eventKey: 'quota.warning',
+    message: 'API quota at 90 %',
+    severity: AlertSeverity::WARNING,
+    reminderInterval: 300, // remind every 5 minutes instead of the global default
 ));
 ```
 
