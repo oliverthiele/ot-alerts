@@ -6,7 +6,8 @@
 	"license": ["GPL-2.0-or-later"],
 	"keywords": ["TYPO3 CMS"],
 	"require": {
-		"typo3/cms-core": "^13.4 || ^14.0",
+		"php": ">=8.3",
+		"typo3/cms-core": "^13.4 || ^14.3",
 		"guzzlehttp/guzzle": "*"
 	},
 	"autoload": {

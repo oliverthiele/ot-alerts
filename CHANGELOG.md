@@ -71,3 +71,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Emergency priority support: configurable `pushoverEmergencyRetry` and `pushoverEmergencyExpire` via Extension Configuration
 - HTML-formatted Pushover messages: event key bold, occurrence count italic
 - Optional tappable link button in Pushover via `context['url']` on the `Alert` value object
+
+[Unreleased]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/oliverthiele/ot-alerts/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/oliverthiele/ot-alerts/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/oliverthiele/ot-alerts/releases/tag/v0.1.0

@@ -1,6 +1,6 @@
 <?php
 
-$EM_CONF[$_EXTKEY] = [
+$EM_CONF['ot_alerts'] = [
     'title' => 'OT Alerts',
     'description' => 'Alert management for TYPO3 extensions — Pushover notifications with rate limiting',
     'category' => 'misc',
@@ -15,10 +15,5 @@ $EM_CONF[$_EXTKEY] = [
         ],
         'conflicts' => [],
         'suggests' => [],
-    ],
-    'autoload' => [
-        'psr-4' => [
-            'OliverThiele\\OtAlerts\\' => 'Classes',
-        ],
     ],
 ];
