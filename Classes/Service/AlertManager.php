@@ -41,7 +41,7 @@ class AlertManager
                 return $result;
             }
 
-            if (!$this->shouldNotify($event)) {
+            if (!$this->shouldNotify($event, $alert)) {
                 $result['reason'] = 'rate_limited';
                 return $result;
             }
@@ -104,7 +104,7 @@ class AlertManager
     }
 
     /** @param array<string, mixed> $event */
-    private function shouldNotify(array $event): bool
+    private function shouldNotify(array $event, Alert $alert): bool
     {
         $status = is_string($event['status'] ?? null) ? $event['status'] : '';
         $lastNotified = is_numeric($event['last_notified'] ?? null) ? (int)$event['last_notified'] : 0;
@@ -113,7 +113,8 @@ class AlertManager
             return true;
         }
 
-        if ($status === AlertStatus::NOTIFIED->value && ($lastNotified + $this->reminderInterval) < time()) {
+        $effectiveInterval = $alert->reminderInterval ?? $this->reminderInterval;
+        if ($status === AlertStatus::NOTIFIED->value && ($lastNotified + $effectiveInterval) < time()) {
             return true;
         }
 
