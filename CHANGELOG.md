@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-07-28
+
+Maintenance release — no functional changes.
+
+### Changed
+
+- `.editorconfig` replaced with the official TYPO3 root version plus the Vue
+  adjustments. Among other things it indents `*.{xlf,xliff}` with two spaces
+  instead of tabs, which the previous file declared
+- `ext_tables.sql` follows the `.editorconfig` rule for `*.sql` and is indented
+  with tabs; the opening parenthesis moved to its own line
+
 ## [0.3.0] — 2026-05-26
 
 ### Added
@@ -72,7 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTML-formatted Pushover messages: event key bold, occurrence count italic
 - Optional tappable link button in Pushover via `context['url']` on the `Alert` value object
 
-[Unreleased]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/oliverthiele/ot-alerts/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.1.1...v0.2.0
