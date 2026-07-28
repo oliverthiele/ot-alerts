@@ -13,7 +13,7 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 # TS/JS-Files
-[*.{ts,js,mjs}]
+[*.{ts,js,mjs,vue}]
 indent_size = 2
 
 # JSON-Files
@@ -22,9 +22,7 @@ indent_style = tab
 
 # ReST-Files
 [*.{rst,rst.txt}]
-indent_size = 4
 max_line_length = 80
-
 
 # Markdown-Files
 [*.md]
@@ -39,11 +37,6 @@ indent_size = 2
 indent_size = 2
 indent_style = tab
 
-#.eslintrc.json
-[.eslintrc.json]
-indent_size = 2
-indent_style = space
-
 # stylelint
 [.stylelintrc]
 indent_size = 2
@@ -57,8 +50,8 @@ indent_size = 2
 indent_size = 2
 
 # XLF-Files
-[*.xlf]
-indent_style = tab
+[*.{xlf,xliff}]
+indent_size = 2
 
 # SQL-Files
 [*.sql]
