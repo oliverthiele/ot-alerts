@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-08-15
+
+### Added
+
+- `Alert::$throttle` — set to `false` for transactional notifications that have to be
+  delivered every single time. `AlertManager::shouldNotify()` then returns early, so
+  neither the reminder interval nor the event status can suppress a dispatch. The
+  occurrence counter is left out of the Pushover message as well: it describes a
+  condition that keeps repeating and says nothing useful about a one-off notification.
+  `notify()` reports such dispatches as `reason: notification`.
+- `AlertSeverity::NOTICE` — maps to the normal Pushover priority (`0`) and reads as
+  `[NOTICE] <source>` in the notification title. For notifications that should be
+  audible without claiming that something is wrong; `INFO` stays the silent level
+  (priority `-1`).
+- `ot_alerts:test --no-throttle` — dispatches the test alert the way `$throttle = false`
+  does, without consuming the rate limit.
+
+Both additions are backwards compatible: `$throttle` defaults to `true`, and no existing
+severity changed its priority mapping.
+
 ## [0.3.1] — 2026-07-28
 
 Maintenance release — no functional changes.
@@ -84,7 +104,8 @@ Maintenance release — no functional changes.
 - HTML-formatted Pushover messages: event key bold, occurrence count italic
 - Optional tappable link button in Pushover via `context['url']` on the `Alert` value object
 
-[Unreleased]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/oliverthiele/ot-alerts/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/oliverthiele/ot-alerts/compare/v0.2.0...v0.2.1

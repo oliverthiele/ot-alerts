@@ -54,7 +54,11 @@ class AlertManager
             }
 
             $status = is_string($event['status'] ?? null) ? $event['status'] : '';
-            $result['reason'] = $status === AlertStatus::NEW->value ? 'new' : 'reminder';
+            $result['reason'] = match (true) {
+                !$alert->throttle => 'notification',
+                $status === AlertStatus::NEW->value => 'new',
+                default => 'reminder',
+            };
 
             foreach ($channels as $channel) {
                 $channelResult = $channel->send($alert, $event);
@@ -106,6 +110,11 @@ class AlertManager
     /** @param array<string, mixed> $event */
     private function shouldNotify(array $event, Alert $alert): bool
     {
+        // Transactional notifications carry their own occasion — there is nothing to throttle.
+        if (!$alert->throttle) {
+            return true;
+        }
+
         $status = is_string($event['status'] ?? null) ? $event['status'] : '';
         $lastNotified = is_numeric($event['last_notified'] ?? null) ? (int)$event['last_notified'] : 0;
 
