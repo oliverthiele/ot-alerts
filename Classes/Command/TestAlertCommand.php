@@ -32,7 +32,7 @@ class TestAlertCommand extends Command
                 'severity',
                 's',
                 InputOption::VALUE_OPTIONAL,
-                'Alert severity: info, warning, error, critical',
+                'Alert severity: info, notice, warning, error, critical',
                 'info'
             )
             ->addOption(
@@ -40,6 +40,12 @@ class TestAlertCommand extends Command
                 null,
                 InputOption::VALUE_NONE,
                 'Reset the rate limit before dispatching — allows re-sending when the event is already "notified"'
+            )
+            ->addOption(
+                'no-throttle',
+                null,
+                InputOption::VALUE_NONE,
+                'Dispatch as a transactional notification, the way Alert::$throttle = false does — no rate limiting at all'
             );
     }
 
@@ -79,11 +85,18 @@ class TestAlertCommand extends Command
             $style->writeln('<comment>Rate limit bypassed — event pre-resolved before dispatch.</comment>');
         }
 
+        $throttle = !$input->getOption('no-throttle');
+
+        if (!$throttle) {
+            $style->writeln('<comment>Throttling disabled — dispatched as a transactional notification.</comment>');
+        }
+
         $alert = new Alert(
             source: 'ot_alerts',
             eventKey: 'test.alert',
             message: sprintf('Test notification sent via CLI (severity: %s)', $severity->value),
             severity: $severity,
+            throttle: $throttle,
         );
 
         $result = $this->alertManager->notify($alert);
@@ -116,7 +129,7 @@ class TestAlertCommand extends Command
             $style->success(sprintf('Test alert dispatched (severity: %s)', $severity->value));
         }
 
-        if ($result['sent']) {
+        if ($result['sent'] && $throttle) {
             $style->note('Status is now "notified" — the next test will be rate-limited. Use --resolve to bypass.');
         }
 

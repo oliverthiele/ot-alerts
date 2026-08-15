@@ -27,6 +27,8 @@ channel dispatch.
 - Optional integration: inject `?AlertManager` via constructor — ot_alerts is
   not a hard dependency, the service is simply `null` when not installed
 - Configurable reminder interval via TYPO3 Extension Configuration, with optional per-alert override
+- Transactional notifications: `throttle: false` delivers every single time,
+  bypassing rate limiting completely
 
 ## Requirements
 
@@ -155,6 +157,34 @@ $this->alertManager?->notify(new Alert(
 ));
 ```
 
+### Sending a transactional notification
+
+Not everything worth a push is an error. A submitted form, a completed import, an
+incoming order — these are events that carry their own occasion and have to be
+delivered **every single time**. Rate limiting would silently swallow the second
+one within the reminder interval.
+
+Pass `throttle: false` for those. `AlertManager` then skips the rate limit and the
+event status entirely, and the occurrence counter is left out of the message,
+because it describes a condition that keeps repeating:
+
+```php
+$this->alertManager?->notify(new Alert(
+    source: 'my_extension',
+    eventKey: 'order.received',
+    message: 'New order #4711 — Jane Doe, 249.00 EUR',
+    severity: AlertSeverity::NOTICE,
+    throttle: false,
+));
+```
+
+`notify()` reports these dispatches as `reason: notification`. The event row is
+still written, so the log keeps `last_message`, `last_occurrence` and the total
+count — you just do not get them pushed to your phone.
+
+`NOTICE` is the matching severity: audible like `WARNING`, but the title reads
+`[NOTICE] my_extension` and does not claim that something is wrong.
+
 ### Resolving an alert
 
 Call `resolve()` once the error condition is no longer present. This resets the
@@ -177,7 +207,8 @@ Message:  api.connection.failed       ← bold event key
           Could not connect to
           external API
 
-          occurrence #3               ← italic, only shown from 2nd occurrence onwards
+          occurrence #3               ← italic, from the 2nd occurrence onwards,
+                                        omitted when throttle: false
 
 [Open page →]                         ← tappable link button, only shown when context['url'] is set
 ```
@@ -187,6 +218,7 @@ Message:  api.connection.failed       ← bold event key
 | Severity   | Pushover priority | Behaviour                                                          |
 |------------|-------------------|--------------------------------------------------------------------|
 | `INFO`     | Low (-1)          | Quiet notification, no sound                                       |
+| `NOTICE`   | Normal (0)        | Default sound and vibration — nothing is wrong, just worth knowing |
 | `WARNING`  | Normal (0)        | Default sound and vibration                                        |
 | `ERROR`    | High (1)          | Bypasses quiet hours                                               |
 | `CRITICAL` | Emergency (2)     | Repeated every `pushoverEmergencyRetry` seconds until acknowledged |
@@ -201,6 +233,8 @@ Still broken →  Push after reminderInterval  →  status: NOTIFIED
 Error fixed  →  resolve() called  →  status: RESOLVED
 New error    →  Push sent immediately  →  status: NOTIFIED
 ```
+
+With `throttle: false` none of this applies — every `notify()` pushes.
 
 ## CLI
 
@@ -222,6 +256,13 @@ Reset the rate limit after the test so the next real error triggers immediately:
 
 ```bash
 vendor/bin/typo3 ot_alerts:test --resolve
+```
+
+Dispatch as a transactional notification, the way `throttle: false` does — no rate
+limiting, and the rate limit of the real events stays untouched:
+
+```bash
+vendor/bin/typo3 ot_alerts:test --no-throttle --severity=notice
 ```
 
 Show per-channel dispatch result including HTTP status:

@@ -127,7 +127,9 @@ class PushoverChannel implements AlertChannelInterface
             htmlspecialchars($alert->message),
         ];
 
-        if ($occurrenceCount > 1) {
+        // The counter describes a condition that keeps repeating. An unthrottled
+        // notification is a new event every time, so the line would be misleading.
+        if ($occurrenceCount > 1 && $alert->throttle) {
             $lines[] = '';
             $lines[] = sprintf('<i>occurrence #%d</i>', $occurrenceCount);
         }
@@ -139,6 +141,7 @@ class PushoverChannel implements AlertChannelInterface
     {
         return match ($severity) {
             AlertSeverity::INFO     => self::PRIORITY_LOW,
+            AlertSeverity::NOTICE   => self::PRIORITY_NORMAL,
             AlertSeverity::WARNING  => self::PRIORITY_NORMAL,
             AlertSeverity::ERROR    => self::PRIORITY_HIGH,
             AlertSeverity::CRITICAL => self::PRIORITY_EMERGENCY,
