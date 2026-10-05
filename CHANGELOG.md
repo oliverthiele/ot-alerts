@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Drop TYPO3 13.4: the extension requires TYPO3 14.3
+- Remove `ext_emconf.php`; the metadata is read from `composer.json`
+  (#108345). Remove the empty `ext_localconf.php`
 - Remove the direct dependency on `guzzlehttp/guzzle`; requests go through
   the TYPO3 `RequestFactory`
 

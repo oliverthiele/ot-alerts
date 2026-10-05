@@ -1,13 +1,34 @@
 {
 	"name": "oliverthiele/ot-alerts",
 	"type": "typo3-cms-extension",
-	"description": "OT Alerts - Alert management for TYPO3 extensions — Pushover notifications with rate limiting",
-	"homepage": "https://www.oliver-thiele.de/",
-	"license": ["GPL-2.0-or-later"],
-	"keywords": ["TYPO3 CMS"],
+	"description": "OT Alerts - Alert management for TYPO3 extensions: Pushover notifications with rate limiting",
+	"homepage": "https://github.com/oliverthiele/ot-alerts",
+	"license": [
+		"GPL-2.0-or-later"
+	],
+	"authors": [
+		{
+			"name": "Oliver Thiele",
+			"email": "mail@oliver-thiele.de",
+			"homepage": "https://www.oliver-thiele.de",
+			"role": "Developer"
+		}
+	],
+	"keywords": [
+		"TYPO3 CMS",
+		"TYPO3 extension",
+		"alerts",
+		"notifications",
+		"Pushover",
+		"monitoring"
+	],
+	"support": {
+		"issues": "https://github.com/oliverthiele/ot-alerts/issues",
+		"source": "https://github.com/oliverthiele/ot-alerts"
+	},
 	"require": {
 		"php": ">=8.3",
-		"typo3/cms-core": "^13.4 || ^14.3"
+		"typo3/cms-core": "^14.3"
 	},
 	"autoload": {
 		"psr-4": {
@@ -16,7 +37,11 @@
 	},
 	"extra": {
 		"typo3/cms": {
-			"extension-key": "ot_alerts"
+			"extension-key": "ot_alerts",
+			"version": "0.4.0",
+			"Package": {
+				"providesPackages": {}
+			}
 		}
 	}
 }
