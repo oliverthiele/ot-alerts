@@ -7,12 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Count the occurrences of an event from one again when it returns after
+  `resolve()`; the counter in the message no longer carries the total of
+  earlier periods
+- Decide the rate limit with one conditional database update, so that of
+  several processes reporting the same event at once exactly one sends
+
 ### Fixed
 
+- Store events on every database TYPO3 supports; the MySQL-only
+  `INSERT … ON DUPLICATE KEY UPDATE` failed on PostgreSQL and SQLite, and
+  `notify()` swallowed the error, so no alert was ever sent there
 - Give the Pushover request a timeout of five seconds and the TYPO3 HTTP
   settings; an unreachable API kept the request that raised the alert waiting
 - Count a notification as sent only when Pushover answers HTTP 200 with
   `"status": 1`
+- Retry an event on its next occurrence when no channel delivered it, instead
+  of holding it back for the reminder interval
 - Shorten messages, titles and event keys to the Pushover limits instead of
   having the notification rejected; pass on `context['url']` only for http(s)
   URLs of up to 512 characters
