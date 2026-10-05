@@ -35,6 +35,11 @@
 			"OliverThiele\\OtAlerts\\": "Classes/"
 		}
 	},
+	"autoload-dev": {
+		"psr-4": {
+			"OliverThiele\\OtAlerts\\Tests\\": "Tests/"
+		}
+	},
 	"extra": {
 		"typo3/cms": {
 			"extension-key": "ot_alerts",

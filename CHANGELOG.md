@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Unit tests for the Pushover channel and the credentials, and functional
+  tests for the rate limit and the event states, run on SQLite
+
 ### Changed
 
 - Count the occurrences of an event from one again when it returns after
