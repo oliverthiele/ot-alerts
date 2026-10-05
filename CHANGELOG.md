@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   earlier periods
 - Decide the rate limit with one conditional database update, so that of
   several processes reporting the same event at once exactly one sends
+- Switch the label file to XLIFF 2.0, with the same unit ids
 - Generate the columns of `tx_otalerts_events` from TCA; `ext_tables.sql`
   only declares the unique key
 
