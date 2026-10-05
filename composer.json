@@ -7,8 +7,7 @@
 	"keywords": ["TYPO3 CMS"],
 	"require": {
 		"php": ">=8.3",
-		"typo3/cms-core": "^13.4 || ^14.3",
-		"guzzlehttp/guzzle": "*"
+		"typo3/cms-core": "^13.4 || ^14.3"
 	},
 	"autoload": {
 		"psr-4": {

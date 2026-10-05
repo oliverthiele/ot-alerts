@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Give the Pushover request a timeout of five seconds and the TYPO3 HTTP
+  settings; an unreachable API kept the request that raised the alert waiting
+- Count a notification as sent only when Pushover answers HTTP 200 with
+  `"status": 1`
+- Shorten messages, titles and event keys to the Pushover limits instead of
+  having the notification rejected; pass on `context['url']` only for http(s)
+  URLs of up to 512 characters
+- Read `PUSHOVER_APP_TOKEN` and `PUSHOVER_USER_KEY` with `getenv()` as well when
+  `$_ENV` lacks them; with `variables_order` without `E`, as in
+  `php.ini-production`, exported variables were ignored
+
+### Removed
+
+- Remove the direct dependency on `guzzlehttp/guzzle`; requests go through
+  the TYPO3 `RequestFactory`
+
 ## [0.4.0] — 2026-08-15
 
 ### Added
