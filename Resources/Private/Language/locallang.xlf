@@ -1,37 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
-    <file source-language="en" datatype="plaintext" original="messages">
-        <body>
-            <trans-unit id="tx_otalerts_events">
-                <source>Alert Events</source>
-            </trans-unit>
-            <trans-unit id="tx_otalerts_events.source">
-                <source>Source</source>
-            </trans-unit>
-            <trans-unit id="tx_otalerts_events.event_key">
-                <source>Event Key</source>
-            </trans-unit>
-            <trans-unit id="tx_otalerts_events.severity">
-                <source>Severity</source>
-            </trans-unit>
-            <trans-unit id="tx_otalerts_events.status">
-                <source>Status</source>
-            </trans-unit>
-            <trans-unit id="tx_otalerts_events.first_occurrence">
-                <source>First Occurrence</source>
-            </trans-unit>
-            <trans-unit id="tx_otalerts_events.last_occurrence">
-                <source>Last Occurrence</source>
-            </trans-unit>
-            <trans-unit id="tx_otalerts_events.last_notified">
-                <source>Last Notified</source>
-            </trans-unit>
-            <trans-unit id="tx_otalerts_events.occurrence_count">
-                <source>Occurrence Count</source>
-            </trans-unit>
-            <trans-unit id="tx_otalerts_events.last_message">
-                <source>Last Message</source>
-            </trans-unit>
-        </body>
-    </file>
+<xliff version="2.0" xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="en">
+  <file id="ot-alerts-locallang"
+        original="EXT:ot_alerts/Resources/Private/Language/locallang.xlf">
+    <unit id="tx_otalerts_events">
+      <segment>
+        <source>Alert Events</source>
+      </segment>
+    </unit>
+    <unit id="tx_otalerts_events.source">
+      <segment>
+        <source>Source</source>
+      </segment>
+    </unit>
+    <unit id="tx_otalerts_events.event_key">
+      <segment>
+        <source>Event Key</source>
+      </segment>
+    </unit>
+    <unit id="tx_otalerts_events.severity">
+      <segment>
+        <source>Severity</source>
+      </segment>
+    </unit>
+    <unit id="tx_otalerts_events.status">
+      <segment>
+        <source>Status</source>
+      </segment>
+    </unit>
+    <unit id="tx_otalerts_events.first_occurrence">
+      <segment>
+        <source>First Occurrence</source>
+      </segment>
+    </unit>
+    <unit id="tx_otalerts_events.last_occurrence">
+      <segment>
+        <source>Last Occurrence</source>
+      </segment>
+    </unit>
+    <unit id="tx_otalerts_events.last_notified">
+      <segment>
+        <source>Last Notified</source>
+      </segment>
+    </unit>
+    <unit id="tx_otalerts_events.occurrence_count">
+      <segment>
+        <source>Occurrence Count</source>
+      </segment>
+    </unit>
+    <unit id="tx_otalerts_events.last_message">
+      <segment>
+        <source>Last Message</source>
+      </segment>
+    </unit>
+  </file>
 </xliff>

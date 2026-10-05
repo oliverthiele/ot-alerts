@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.5.0] — 2026-10-05
+
+### Added
+
+- Unit tests for the Pushover channel and the credentials, and functional
+  tests for the rate limit and the event states, run on SQLite
+
+### Changed
+
+- Count the occurrences of an event from one again when it returns after
+  `resolve()`; the counter in the message no longer carries the total of
+  earlier periods
+- Decide the rate limit with one conditional database update, so that of
+  several processes reporting the same event at once exactly one sends
+- Switch the label file to XLIFF 2.0, with the same unit ids
+- Generate the columns of `tx_otalerts_events` from TCA; `ext_tables.sql`
+  only declares the unique key
+- Restructure the README
+
+### Fixed
+
+- Store events on every database TYPO3 supports; the MySQL-only
+  `INSERT … ON DUPLICATE KEY UPDATE` failed on PostgreSQL and SQLite, and
+  `notify()` swallowed the error, so no alert was ever sent there
+- Give the Pushover request a timeout of five seconds and the TYPO3 HTTP
+  settings; an unreachable API kept the request that raised the alert waiting
+- Count a notification as sent only when Pushover answers HTTP 200 with
+  `"status": 1`
+- Retry an event on its next occurrence when no channel delivered it, instead
+  of holding it back for the reminder interval
+- Shorten messages, titles and event keys to the Pushover limits instead of
+  having the notification rejected; pass on `context['url']` only for http(s)
+  URLs of up to 512 characters
+- Read `PUSHOVER_APP_TOKEN` and `PUSHOVER_USER_KEY` with `getenv()` as well when
+  `$_ENV` lacks them; with `variables_order` without `E`, as in
+  `php.ini-production`, exported variables were ignored
+- Replace the table icon that pointed to a missing file with the core icon
+  `actions-bell`
+- Correct the README on `ot_alerts:test`: `-v` and `-vvv` change nothing, and
+  `--resolve` resolves before sending only
+
+### Removed
+
+- Drop TYPO3 13.4: the extension requires TYPO3 14.3
+- Remove `ext_emconf.php`; the metadata is read from `composer.json`
+  (#108345). Remove the empty `ext_localconf.php`
+- Remove the direct dependency on `guzzlehttp/guzzle`; requests go through
+  the TYPO3 `RequestFactory`
+
 ## [0.4.0] — 2026-08-15
 
 ### Added
@@ -104,7 +155,8 @@ Maintenance release — no functional changes.
 - HTML-formatted Pushover messages: event key bold, occurrence count italic
 - Optional tappable link button in Pushover via `context['url']` on the `Alert` value object
 
-[Unreleased]: https://github.com/oliverthiele/ot-alerts/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/oliverthiele/ot-alerts/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.2.1...v0.3.0

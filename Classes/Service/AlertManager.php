@@ -27,6 +27,9 @@ class AlertManager
     }
 
     /**
+     * Records the occurrence and dispatches it unless the rate limit holds it
+     * back. Never throws: a failing alert must not break the caller.
+     *
      * @return array{sent: bool, reason: string, channels: list<array{sent: bool, channel: string, httpStatus?: int, body?: string, error?: string}>}
      */
     public function notify(Alert $alert): array
@@ -35,25 +38,32 @@ class AlertManager
 
         try {
             $event = $this->alertEventRepository->upsertEvent($alert);
-
-            if ($event === []) {
+            $uid = isset($event['uid']) && is_numeric($event['uid']) ? (int)$event['uid'] : 0;
+            if ($uid === 0) {
                 $result['reason'] = 'error';
                 return $result;
             }
 
-            if (!$this->shouldNotify($event, $alert)) {
-                $result['reason'] = 'rate_limited';
-                return $result;
-            }
-
             $channels = $this->getChannels();
-
             if ($channels === []) {
                 $result['reason'] = 'no_channels';
                 return $result;
             }
 
             $status = is_string($event['status'] ?? null) ? $event['status'] : '';
+            $lastNotified = is_numeric($event['last_notified'] ?? null) ? (int)$event['last_notified'] : 0;
+
+            // The claim is the rate limit: a database update that only one of
+            // several processes reporting the same event at once can win.
+            // Transactional notifications carry their own occasion — nothing to throttle.
+            if ($alert->throttle) {
+                $reminderInterval = $alert->reminderInterval ?? $this->reminderInterval;
+                if (!$this->alertEventRepository->claimNotification($uid, time() - $reminderInterval)) {
+                    $result['reason'] = 'rate_limited';
+                    return $result;
+                }
+            }
+
             $result['reason'] = match (true) {
                 !$alert->throttle => 'notification',
                 $status === AlertStatus::NEW->value => 'new',
@@ -68,19 +78,20 @@ class AlertManager
                 }
             }
 
-            if ($result['sent']) {
-                $uid = isset($event['uid']) && is_numeric($event['uid']) ? (int)$event['uid'] : 0;
-                if ($uid > 0) {
-                    $this->alertEventRepository->markNotified($uid);
-                }
+            if ($alert->throttle && !$result['sent']) {
+                // Nothing went out: the next occurrence tries again instead of
+                // waiting for the reminder interval.
+                $this->alertEventRepository->releaseClaim($uid, $status, $lastNotified);
+            } elseif (!$alert->throttle && $result['sent']) {
+                $this->alertEventRepository->markNotified($uid);
             }
         } catch (\Throwable $throwable) {
             $this->logger->error(
                 'AlertManager::notify failed for {source}/{eventKey}: {message}',
                 [
-                    'source'    => $alert->source,
-                    'eventKey'  => $alert->eventKey,
-                    'message'   => $throwable->getMessage(),
+                    'source' => $alert->source,
+                    'eventKey' => $alert->eventKey,
+                    'message' => $throwable->getMessage(),
                     'exception' => $throwable,
                 ]
             );
@@ -98,39 +109,16 @@ class AlertManager
             $this->logger->error(
                 'AlertManager::resolve failed for {source}/{eventKey}: {message}',
                 [
-                    'source'    => $source,
-                    'eventKey'  => $eventKey,
-                    'message'   => $throwable->getMessage(),
+                    'source' => $source,
+                    'eventKey' => $eventKey,
+                    'message' => $throwable->getMessage(),
                     'exception' => $throwable,
                 ]
             );
         }
     }
 
-    /** @param array<string, mixed> $event */
-    private function shouldNotify(array $event, Alert $alert): bool
-    {
-        // Transactional notifications carry their own occasion — there is nothing to throttle.
-        if (!$alert->throttle) {
-            return true;
-        }
-
-        $status = is_string($event['status'] ?? null) ? $event['status'] : '';
-        $lastNotified = is_numeric($event['last_notified'] ?? null) ? (int)$event['last_notified'] : 0;
-
-        if ($status === AlertStatus::NEW->value) {
-            return true;
-        }
-
-        $effectiveInterval = $alert->reminderInterval ?? $this->reminderInterval;
-        if ($status === AlertStatus::NOTIFIED->value && ($lastNotified + $effectiveInterval) < time()) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /** @return AlertChannelInterface[] */
+    /** @return list<AlertChannelInterface> */
     private function getChannels(): array
     {
         $channels = [$this->pushoverChannel];

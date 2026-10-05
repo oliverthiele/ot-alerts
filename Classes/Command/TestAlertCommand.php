@@ -6,6 +6,7 @@ namespace OliverThiele\OtAlerts\Command;
 
 use OliverThiele\OtAlerts\Alert\Alert;
 use OliverThiele\OtAlerts\Alert\AlertSeverity;
+use OliverThiele\OtAlerts\Channel\PushoverCredentials;
 use OliverThiele\OtAlerts\Service\AlertManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -65,17 +66,17 @@ class TestAlertCommand extends Command
             return Command::FAILURE;
         }
 
-        $pushoverAppToken = $_ENV['PUSHOVER_APP_TOKEN'] ?? '';
-        $pushoverUserKey  = $_ENV['PUSHOVER_USER_KEY'] ?? '';
+        // The same source the channel reads: $_ENV, then the process environment.
+        $credentials = PushoverCredentials::fromEnvironment();
 
         $style->section('ot_alerts — Channel Configuration');
         $style->definitionList(
-            ['PUSHOVER_APP_TOKEN' => $pushoverAppToken !== '' ? '✓ set' : '✗ missing'],
-            ['PUSHOVER_USER_KEY'  => $pushoverUserKey !== '' ? '✓ set' : '✗ missing'],
+            [PushoverCredentials::APP_TOKEN_VARIABLE => $credentials->appToken !== '' ? '✓ set' : '✗ missing'],
+            [PushoverCredentials::USER_KEY_VARIABLE => $credentials->userKey !== '' ? '✓ set' : '✗ missing'],
         );
 
-        if ($pushoverAppToken === '' || $pushoverUserKey === '') {
-            $style->warning('Pushover is not configured — set PUSHOVER_APP_TOKEN and PUSHOVER_USER_KEY in .env');
+        if (!$credentials->isComplete()) {
+            $style->warning('Pushover is not configured — set PUSHOVER_APP_TOKEN and PUSHOVER_USER_KEY in the environment or in .env');
         }
 
         $style->section('Sending test alert');
