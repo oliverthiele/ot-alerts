@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-10-05
+
 ### Added
 
 - Unit tests for the Pushover channel and the credentials, and functional
@@ -153,7 +155,8 @@ Maintenance release — no functional changes.
 - HTML-formatted Pushover messages: event key bold, occurrence count italic
 - Optional tappable link button in Pushover via `context['url']` on the `Alert` value object
 
-[Unreleased]: https://github.com/oliverthiele/ot-alerts/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/oliverthiele/ot-alerts/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/oliverthiele/ot-alerts/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/oliverthiele/ot-alerts/compare/v0.2.1...v0.3.0

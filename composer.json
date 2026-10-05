@@ -43,7 +43,7 @@
 	"extra": {
 		"typo3/cms": {
 			"extension-key": "ot_alerts",
-			"version": "0.4.0",
+			"version": "0.5.0",
 			"Package": {
 				"providesPackages": {}
 			}
