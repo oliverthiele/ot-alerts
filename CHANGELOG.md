@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   earlier periods
 - Decide the rate limit with one conditional database update, so that of
   several processes reporting the same event at once exactly one sends
+- Generate the columns of `tx_otalerts_events` from TCA; `ext_tables.sql`
+  only declares the unique key
 
 ### Fixed
 
@@ -32,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Read `PUSHOVER_APP_TOKEN` and `PUSHOVER_USER_KEY` with `getenv()` as well when
   `$_ENV` lacks them; with `variables_order` without `E`, as in
   `php.ini-production`, exported variables were ignored
+- Replace the table icon that pointed to a missing file with the core icon
+  `actions-bell`
 
 ### Removed
 

@@ -11,24 +11,26 @@ return [
         'hideTable' => true,
         'rootLevel' => -1,
         'adminOnly' => true,
-        'iconfile' => 'EXT:ot_alerts/Resources/Public/Icons/Extension.svg',
+        'typeicon_classes' => [
+            'default' => 'actions-bell',
+        ],
     ],
     'columns' => [
         'source' => [
             'label' => 'LLL:EXT:ot_alerts/Resources/Private/Language/locallang.xlf:tx_otalerts_events.source',
-            'config' => ['type' => 'input', 'readOnly' => true],
+            'config' => ['type' => 'input', 'max' => 100, 'readOnly' => true],
         ],
         'event_key' => [
             'label' => 'LLL:EXT:ot_alerts/Resources/Private/Language/locallang.xlf:tx_otalerts_events.event_key',
-            'config' => ['type' => 'input', 'readOnly' => true],
+            'config' => ['type' => 'input', 'max' => 200, 'readOnly' => true],
         ],
         'severity' => [
             'label' => 'LLL:EXT:ot_alerts/Resources/Private/Language/locallang.xlf:tx_otalerts_events.severity',
-            'config' => ['type' => 'input', 'readOnly' => true],
+            'config' => ['type' => 'input', 'max' => 20, 'readOnly' => true],
         ],
         'status' => [
             'label' => 'LLL:EXT:ot_alerts/Resources/Private/Language/locallang.xlf:tx_otalerts_events.status',
-            'config' => ['type' => 'input', 'readOnly' => true],
+            'config' => ['type' => 'input', 'max' => 20, 'readOnly' => true],
         ],
         'first_occurrence' => [
             'label' => 'LLL:EXT:ot_alerts/Resources/Private/Language/locallang.xlf:tx_otalerts_events.first_occurrence',
