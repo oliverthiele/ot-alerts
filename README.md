@@ -1,42 +1,49 @@
-# ot_alerts — Alert Management for TYPO3 Extensions
+# OT Alerts — Alert management for TYPO3 extensions
 
-Centralised alert proxy for TYPO3 extensions — sends Pushover push notifications
-with built-in
-rate limiting and deduplication. Other extensions simply call
-`AlertManager::notify()` and
-`AlertManager::resolve()`; ot_alerts handles throttling, state tracking, and
-channel dispatch.
+Other extensions call `AlertManager::notify()` and `AlertManager::resolve()`;
+OT Alerts sends Pushover push notifications and takes care of rate limiting,
+deduplication and the state of every event.
 
-[![TYPO3](https://img.shields.io/badge/TYPO3-13.4_%7C_14-orange.svg)](https://typo3.org/)
+[![TYPO3](https://img.shields.io/badge/TYPO3-14.3-orange.svg)](https://typo3.org/)
 [![Packagist Version](https://img.shields.io/packagist/v/oliverthiele/ot-alerts.svg)](https://packagist.org/packages/oliverthiele/ot-alerts)
 [![PHP](https://img.shields.io/packagist/dependency-v/oliverthiele/ot-alerts/php.svg)](https://php.net/)
 [![License](https://img.shields.io/packagist/l/oliverthiele/ot-alerts.svg)](LICENSE)
 [![Changelog](https://img.shields.io/badge/Changelog-CHANGELOG.md-blue.svg)](CHANGELOG.md)
 
+---
+
 ## Features
 
-- Pushover push notifications via REST API with HTML formatting
-- Event key and occurrence count visible in every notification
-- Optional tappable link button in Pushover (via `context['url']`)
-- Rate limiting: first occurrence triggers immediately, then once per
-  configurable reminder interval
-- State machine: NEW → NOTIFIED → RESOLVED — resolved errors trigger fresh
-  notifications when they reappear
-- DB-backed event log (`tx_otalerts_events`) for audit trail and future backend
-  module
-- Optional integration: inject `?AlertManager` via constructor — ot_alerts is
-  not a hard dependency, the service is simply `null` when not installed
-- Configurable reminder interval via TYPO3 Extension Configuration, with optional per-alert override
-- Transactional notifications: `throttle: false` delivers every single time,
-  bypassing rate limiting completely
+- **Pushover notifications** — HTML formatted, with the event key, the
+  message and an optional link button; messages longer than the Pushover limit
+  are shortened instead of rejected
+- **Rate limiting** — the first occurrence is sent at once, then one reminder
+  per configurable interval, also per alert
+- **Deduplication across processes** — when many requests report the same
+  event at the same moment, exactly one notification goes out
+- **Event states** — new → notified → resolved; a resolved event that returns
+  is sent again at once and counted from one
+- **Transactional notifications** — `throttle: false` delivers every single
+  time, for events such as a received order
+- **Event log** — one row per event in `tx_otalerts_events`, on every database
+  TYPO3 supports
+- **Optional dependency** — inject `?AlertManager`; without OT Alerts installed
+  the container passes `null`
+- **Never in the way** — `notify()` does not throw, and the request to
+  Pushover gives up after five seconds
+
+---
 
 ## Requirements
 
-| Requirement       | Version          |
-|-------------------|------------------|
-| TYPO3             | ^13.4 \|\| ^14.0 |
-| PHP               | ^8.4             |
-| guzzlehttp/guzzle | ^7.0             |
+| Requirement | Version |
+|-------------|---------|
+| TYPO3       | ^14.3   |
+| PHP         | >=8.3   |
+
+A [Pushover](https://pushover.net/) account with an application token.
+
+---
 
 ## Installation
 
@@ -44,29 +51,39 @@ channel dispatch.
 composer require oliverthiele/ot-alerts
 ```
 
-After installation, run database schema update:
+Then run the TYPO3 setup, which creates the event table:
 
 ```bash
-vendor/bin/typo3 database:updateschema
+vendor/bin/typo3 extension:setup -e ot_alerts
+# or via DDEV:
+ddev typo3 extension:setup -e ot_alerts
 ```
+
+---
 
 ## Configuration
 
-### Environment Variables
+### Pushover credentials
 
-Add the following to your `.env` file:
+Set two environment variables, both shown in your
+[Pushover dashboard](https://pushover.net/):
 
 ```dotenv
 PUSHOVER_APP_TOKEN=your_app_token_here
 PUSHOVER_USER_KEY=your_user_key_here
 ```
 
-Both values are available in your [Pushover dashboard](https://pushover.net/).
+They can come from a `.env` file or from the environment of the process —
+`export`, a cron entry, the webserver configuration. Each variable is read from
+`$_ENV` first, then with `getenv()`, so they are found whether or not
+`variables_order` contains `E`.
 
-### Extension Configuration
+Without both values the channel counts as not configured, and `notify()`
+reports `no_channels`.
 
-Configure in the TYPO3 backend under **Admin Tools → Settings → Extension
-Configuration → ot_alerts**:
+### Extension configuration
+
+**Admin Tools → Settings → Extension Configuration → ot_alerts**:
 
 | Key                       | Type | Default | Description                                          |
 |---------------------------|------|---------|------------------------------------------------------|
@@ -74,15 +91,15 @@ Configuration → ot_alerts**:
 | `pushoverEmergencyRetry`  | int  | `60`    | Seconds between retries for CRITICAL alerts (min 30) |
 | `pushoverEmergencyExpire` | int  | `3600`  | Seconds until Pushover stops retrying (max 10800)    |
 
+---
+
 ## Usage
 
 ### Optional dependency via constructor injection
 
-The recommended integration pattern uses TYPO3's Symfony DI container. Declare
-`?AlertManager`
-as a nullable constructor parameter — when ot_alerts is not installed, the
-container injects
-`null` and all calls are silently skipped via the null-safe operator:
+Declare `?AlertManager` as a nullable constructor parameter. When OT Alerts is
+not installed, the container passes `null` and the null-safe operator skips
+every call — no `class_exists()` guard needed:
 
 ```php
 use OliverThiele\OtAlerts\Alert\Alert;
@@ -99,7 +116,6 @@ class MyService
     {
         // ... your logic ...
 
-        // notify — only fires when ot_alerts is installed
         $this->alertManager?->notify(new Alert(
             source: 'my_extension',
             eventKey: 'api.connection.failed',
@@ -110,26 +126,10 @@ class MyService
 }
 ```
 
-No `class_exists()` guard or `GeneralUtility::makeInstance()` needed — the
-container resolves
-the optional service automatically.
+### Link button
 
-### Sending an alert
-
-```php
-$this->alertManager?->notify(new Alert(
-    source: 'my_extension',
-    eventKey: 'api.connection.failed',
-    message: 'Could not connect to external API',
-    severity: AlertSeverity::ERROR,
-));
-```
-
-### Sending an alert with a URL
-
-Pass `context['url']` to add a tappable link button to the Pushover
-notification.
-This is useful to open the affected page directly from the push:
+`context['url']` adds a tappable button that opens the affected page. Only
+`http` and `https` URLs of up to 512 characters are passed on:
 
 ```php
 $this->alertManager?->notify(new Alert(
@@ -141,11 +141,9 @@ $this->alertManager?->notify(new Alert(
 ));
 ```
 
-### Sending an alert with a per-alert reminder interval
+### Reminder interval per alert
 
-Pass `reminderInterval` to override the global extension configuration for this
-specific alert. Useful when certain events need a shorter or longer throttle than
-the global default:
+`reminderInterval` overrides the configured interval for one alert:
 
 ```php
 $this->alertManager?->notify(new Alert(
@@ -153,20 +151,20 @@ $this->alertManager?->notify(new Alert(
     eventKey: 'quota.warning',
     message: 'API quota at 90 %',
     severity: AlertSeverity::WARNING,
-    reminderInterval: 300, // remind every 5 minutes instead of the global default
+    reminderInterval: 300, // every 5 minutes instead of the configured interval
 ));
 ```
 
-### Sending a transactional notification
+### Transactional notifications
 
-Not everything worth a push is an error. A submitted form, a completed import, an
-incoming order — these are events that carry their own occasion and have to be
-delivered **every single time**. Rate limiting would silently swallow the second
-one within the reminder interval.
+Not everything worth a push is an error. A submitted form, a completed import,
+an incoming order — these carry their own occasion and have to be delivered
+every single time. Rate limiting would swallow the second one within the
+reminder interval.
 
-Pass `throttle: false` for those. `AlertManager` then skips the rate limit and the
-event status entirely, and the occurrence counter is left out of the message,
-because it describes a condition that keeps repeating:
+Pass `throttle: false` for those. The rate limit and the event state are then
+skipped, and the occurrence counter is left out of the message, because it
+describes a condition that keeps repeating:
 
 ```php
 $this->alertManager?->notify(new Alert(
@@ -179,39 +177,57 @@ $this->alertManager?->notify(new Alert(
 ```
 
 `notify()` reports these dispatches as `reason: notification`. The event row is
-still written, so the log keeps `last_message`, `last_occurrence` and the total
-count — you just do not get them pushed to your phone.
+still written, so the log keeps `last_message`, `last_occurrence` and the
+count.
 
 `NOTICE` is the matching severity: audible like `WARNING`, but the title reads
 `[NOTICE] my_extension` and does not claim that something is wrong.
 
-### Resolving an alert
+### Resolving an event
 
-Call `resolve()` once the error condition is no longer present. This resets the
-state so the
-next occurrence will trigger a fresh notification immediately.
+Call `resolve()` once the condition is gone. The next occurrence is sent at
+once and counted from one:
 
 ```php
 $this->alertManager?->resolve('my_extension', 'api.connection.failed');
 ```
 
+### What `notify()` returns
+
+```php
+['sent' => bool, 'reason' => string, 'channels' => list<array>]
+```
+
+| `reason`       | Meaning                                                        |
+|----------------|----------------------------------------------------------------|
+| `new`          | First occurrence, or the first after `resolve()`               |
+| `reminder`     | Still occurring, and the reminder interval is over             |
+| `notification` | Sent with `throttle: false`                                    |
+| `rate_limited` | Held back: already notified within the interval                |
+| `no_channels`  | No channel is configured                                       |
+| `error`        | Something failed; the details are in the TYPO3 log             |
+
+When no channel delivers a notification, the event is not marked as notified:
+the next occurrence tries again instead of waiting for the interval.
+
 ### Notification format
 
-Pushover messages use HTML formatting for readability:
-
 ```
-Title:    [ERROR] my_extension
+Title:    [ERROR] my_extension @ hostname
 
 Message:  api.connection.failed       ← bold event key
 
           Could not connect to
           external API
 
-          occurrence #3               ← italic, from the 2nd occurrence onwards,
-                                        omitted when throttle: false
+          occurrence #3               ← from the 2nd occurrence on,
+                                        omitted with throttle: false
 
-[Open page →]                         ← tappable link button, only shown when context['url'] is set
+[Open page]                           ← only with context['url']
 ```
+
+Pushover accepts 1024 characters per message and 250 per title. Longer texts
+are shortened and end with `…`.
 
 ### Severity levels and Pushover priorities
 
@@ -223,68 +239,49 @@ Message:  api.connection.failed       ← bold event key
 | `ERROR`    | High (1)          | Bypasses quiet hours                                               |
 | `CRITICAL` | Emergency (2)     | Repeated every `pushoverEmergencyRetry` seconds until acknowledged |
 
-Emergency notifications (CRITICAL) require acknowledgement in the Pushover app.
-
 ### Notification behaviour
 
 ```
-First error  →  Push sent immediately  →  status: NOTIFIED
-Still broken →  Push after reminderInterval  →  status: NOTIFIED
-Error fixed  →  resolve() called  →  status: RESOLVED
-New error    →  Push sent immediately  →  status: NOTIFIED
+First error  →  push sent at once         →  status: notified
+Still broken →  push after the interval   →  status: notified
+Error fixed  →  resolve() called          →  status: resolved
+New error    →  push sent at once         →  status: notified
 ```
 
 With `throttle: false` none of this applies — every `notify()` pushes.
 
+---
+
 ## CLI
 
-### Test notification
+### `ot_alerts:test`
 
-Verify that Pushover credentials are configured and a push is delivered:
+Checks the Pushover credentials, sends a test alert and prints the answer of
+the Pushover API:
 
 ```bash
 vendor/bin/typo3 ot_alerts:test
-```
-
-Send with a specific severity:
-
-```bash
 vendor/bin/typo3 ot_alerts:test --severity=error
 ```
 
-Reset the rate limit after the test so the next real error triggers immediately:
+| Option          | Description                                                                 |
+|-----------------|-----------------------------------------------------------------------------|
+| `--severity`    | `info`, `notice`, `warning`, `error` or `critical` (default: `info`)        |
+| `--resolve`     | Resolve the test event before sending, so the rate limit does not hold it back |
+| `--no-throttle` | Send as a transactional notification, the way `throttle: false` does        |
 
-```bash
-vendor/bin/typo3 ot_alerts:test --resolve
-```
+The test event is rate limited like any other: a second run within the
+reminder interval reports `Rate limit active`. Use `--resolve` or
+`--no-throttle` to send again.
 
-Dispatch as a transactional notification, the way `throttle: false` does — no rate
-limiting, and the rate limit of the real events stays untouched:
-
-```bash
-vendor/bin/typo3 ot_alerts:test --no-throttle --severity=notice
-```
-
-Show per-channel dispatch result including HTTP status:
-
-```bash
-vendor/bin/typo3 ot_alerts:test -v
-```
-
-Show the raw Pushover API response body (full debug output):
-
-```bash
-vendor/bin/typo3 ot_alerts:test -vvv
-```
-
-If the alert was previously sent and the reminder interval has not yet elapsed,
-the command shows `[WARNING] Rate limit active`. Use `--resolve` to bypass:
-the command pre-resolves the event before sending (so the rate limit is skipped)
-and post-resolves after (so the next test also sends immediately).
-
-The command shows which ENV variables are present, dispatches the alert, and
-prints the result.
+---
 
 ## License
 
-GPL-2.0-or-later — © 2025 Oliver Thiele
+GPL-2.0-or-later — see [LICENSE](LICENSE)
+
+---
+
+## Author
+
+Oliver Thiele — [oliver-thiele.de](https://www.oliver-thiele.de)

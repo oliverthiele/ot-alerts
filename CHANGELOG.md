@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Switch the label file to XLIFF 2.0, with the same unit ids
 - Generate the columns of `tx_otalerts_events` from TCA; `ext_tables.sql`
   only declares the unique key
+- Restructure the README
 
 ### Fixed
 
@@ -42,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `php.ini-production`, exported variables were ignored
 - Replace the table icon that pointed to a missing file with the core icon
   `actions-bell`
+- Correct the README on `ot_alerts:test`: `-v` and `-vvv` change nothing, and
+  `--resolve` resolves before sending only
 
 ### Removed
 
